@@ -111,16 +111,23 @@ The model and training code are provided in a Jupyter Notebook (`.ipynb`) format
 To generate answers from the fine-tuned model:
 
 ```python
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+def human_eval(questions, model, tokenizer):
+  device = "cuda" if torch.cuda.is_available() else "cpu"
+  model.to(device)
 
-tokenizer = T5Tokenizer.from_pretrained('your-finetuned-model-path')
-model = T5ForConditionalGeneration.from_pretrained('your-finetuned-model-path')
+  for question in questions:
+      inputs = "Please answer this question: " + question
 
-input_text = "How to create a new text file in Python?"
-input_ids = tokenizer(input_text, return_tensors='pt').input_ids
-output = model.generate(input_ids, max_length=256)
+      inputs = tokenizer(inputs, return_tensors="pt")
+      inputs = {k: v.to(device) for k, v in inputs.items()}
 
-print(tokenizer.decode(output, skip_special_tokens=True))
+      outputs = model.generate(**inputs, max_new_tokens=300)
+      answer = tokenizer.decode(outputs[0])
+
+      print("\nQuestion:", question)
+      print(fill(answer, width=150))
+
+human_eval(questions, finetuned_model, tokenizer)
 ```
 
 ## References
